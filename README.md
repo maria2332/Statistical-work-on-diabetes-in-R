@@ -9,9 +9,19 @@
   <img src="https://img.shields.io/badge/R-276DC3?logo=r&logoColor=white&style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Statistics-Academic-blue?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Data%20Analysis-R--Markdown-success?style=for-the-badge"/>
+
+  <a href="https://deepwiki.com/maria2332/Statistical-work-on-diabetes-in-R/1-home" target="_blank">
+    <img src="https://img.shields.io/badge/DeepWiki-Documentation-purple?style=for-the-badge"/>
+  </a>
 </p>
 
 🌐 **Rendered report (GitHub Pages):** https://maria2332.github.io/Statistical-work-on-diabetes-in-R/
+
+## 📚 Project Documentation (External)
+
+An automatically generated documentation view of this repository is available via DeepWiki:
+
+👉 https://deepwiki.com/maria2332/Statistical-work-on-diabetes-in-R/1-home
 
 ---
 
