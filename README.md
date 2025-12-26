@@ -15,7 +15,7 @@
   </a>
 </p>
 
-🌐 **Rendered report (GitHub Pages):** https://maria2332.github.io/Statistical-work-on-diabetes-in-R/
+## 🌐 **Rendered report (GitHub Pages):** https://maria2332.github.io/Statistical-work-on-diabetes-in-R/
 
 ## 📚 Project Documentation (External)
 
