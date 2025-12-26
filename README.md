@@ -11,6 +11,8 @@
   <img src="https://img.shields.io/badge/Data%20Analysis-R--Markdown-success?style=for-the-badge"/>
 </p>
 
+🌐 **Rendered report (GitHub Pages):** https://maria2332.github.io/Statistical-work-on-diabetes-in-R/
+
 ---
 
 ## 🎓 Academic Context
