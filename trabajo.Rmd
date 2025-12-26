@@ -1,0 +1,1897 @@
+---
+title: "Trabajo de Estadística"
+---
+
+<style>
+body {
+    background-color: #E6F0FF;
+}
+</style>
+
+<center>
+<span style="border: 2px solid black; padding: 5px; background-image: linear-gradient(to right, red, yellow, green); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 4em;">Proyecto r María Arribas</span>
+</center>
+
+<span style="color:darkgreen; font-size:2em;"> El csv elegido para el proyecto contiene las siguientes variables: </span>
+
+<span style="color: green"><u>Gender:</u> El género de la persona registrada en el conjunto de datos. 
+
+<span style="color: green"><u>Age:</u> La edad de la persona registrada en el conjunto de datos. 
+
+<span style="color: green"><u>Hypertension:</u> Si la persona registrada en el conjunto de datos tiene hipertensión o no. Hipertensión es una condición médica en la cual la presión arterial de una persona es crónicamente alta.
+
+<span style="color: green"><u>Heart_disease:</u> Si la persona registrada en el conjunto de datos tiene una enfermedad cardíaca o no.
+
+<span style="color: green"><u>Smoking_history:</u> Si la persona registrada en el conjunto de datos tiene un historial de fumar o no.
+
+<span style="color: green"><u>Bmi:</u> El índice de masa corporal (IMC) de la persona registrada en el conjunto de datos. El IMC es una medida de la grasa corporal basada en la altura y el peso de una persona.
+
+<span style="color: green"><u>HbA1c_level:</u> Nivel de HbA1c en sangre de la persona registrada en el conjunto de datos. HbA1c es una medida del nivel promedio de glucosa en la sangre durante los últimos 2-3 meses. Normal: HbA1c por debajo de 5,7% Prediabetes: HbA1c entre 5,7% y 6,4% Diabetes: HbA1c de 6.5% o más alto.
+
+<span style="color: green"><u>Blood_glucose_level:</u> El nivel de glucosa en sangre de la persona registrada en el conjunto de datos.
+
+<span style="color: green"><u>Diabetes:</u> Si la persona registrada en el conjunto de datos tiene diabetes o no. La diabetes es una afección en la que el nivel de azúcar en la sangre de una persona es demasiado alto debido a que su cuerpo no produce o utiliza adecuadamente la insulina.</span>
+
+<span style="text-shadow: 2px 2px gray, -2px -2px white; font-size: 2em; color:blue;">Fichero csv inicial ajustando los datos al ancho de la pantalla</span>
+
+```{r}
+# Leer el archivo CSV en un DataFrame
+dataframe <- read.csv("diabetes_prediction_dataset.csv", header = TRUE)
+
+# Ajustar la opción de ancho de pantalla para mostrar todas las columnas
+options(width = 200)
+
+# Imprimir los primero 5 registros
+head(dataframe)
+```
+
+<span style="color:blue; font-size:2em;">Fichero csv sin las filas que no contienen informacion sobre el historial fumador del paciente</span>
+
+```{r}
+# Cargar el archivo CSV
+datos <- read.csv("diabetes_prediction_dataset.csv")
+
+# Crear una variable que indique si alguna columna contiene "No Info"
+no_info <- apply(datos, 1, function(x) any(grepl("No Info", x)))
+
+# Seleccionar sólo las filas que no contengan "No Info"
+datos_limpio <- subset(datos, !no_info)
+
+# Guardar el archivo CSV limpio
+write.csv(datos_limpio, file = "datos_limpio.csv", row.names = FALSE)
+
+# Imprimir los primero 5 registros
+head(datos_limpio)
+```
+
+<span style="text-shadow: 1px 1px 2px black; font-size: 2em; color:blue;">Fichero csv con 500 datos</span>
+
+```{r}	
+# Cargar el archivo CSV completo como un data frame
+datos_completos <- read.csv("datos_limpio.csv")
+
+# Seleccionar las primeras 500 filas del data frame
+datos_reducidos <- head(datos_completos, 500)
+
+# Escribir el data frame resultante a un nuevo archivo CSV
+write.csv(datos_reducidos, "nuevo_archivo.csv", row.names = FALSE)
+
+# Imprimir el csv resultante
+head(datos_reducidos)
+```
+
+<span style="color:blue; font-size:2em;">Generar nuevas columnas a partir de la aplicación de fórmulas a las columnas existentes
+(tanto numéricas, como cadena y booleanas)</span>
+
+```{r}
+# Cargar el archivo CSV como un data frame
+datos <- read.csv("nuevo_archivo.csv")
+
+# Crear una nueva columna "edad_en_meses"
+datos$edad_en_meses <- datos$age * 12
+
+# Crear una nueva columna "riesgo_cardiovascular" basada en la presencia de hipertensión o enfermedad cardíaca
+datos$riesgo_cardiovascular <- ifelse(datos$hypertension == 1 | datos$heart_disease == 1, "alto", "bajo")
+
+# Crear una nueva columna "fumador" con valores booleanos indicando si la persona fuma o no
+datos$fumador <- ifelse(datos$smoking_history != "never", TRUE, FALSE)
+
+# Crear una nueva columna "estado_diabetes" basada en los niveles de HbA1c y glucosa en sangre
+datos$estado_diabetes <- ifelse(datos$diabetes == 1, "diabético", 
+                                 ifelse(datos$HbA1c_level >= 5.7 | datos$blood_glucose_level >= 126, "prediabético", "no diabético"))
+
+#ajustar el ancho de pantalla para mostrar todas las columnas
+options(width = 200)
+
+# Escribir los datos actualizados a un nuevo archivo CSV
+write.csv(datos, "new_columns.csv", row.names = FALSE)
+
+# Imprimir los primeros 5 registros
+head(datos)
+```
+
+<span style="color:blue; font-size:2em;">Generar nuevas columnas a partir de la recodificación de otras.</span>
+
+```{r}
+library(dplyr)
+
+# Cargar el archivo CSV como un data frame
+datos <- read.csv("new_columns.csv")
+
+# Generar nuevas columnas a partir de la recodificación de otras
+datos <- datos %>%
+  mutate(new_hypertension = ifelse(hypertension == 1, "Sí", "No"),
+         new_heart_disease = ifelse(heart_disease == 1, "Sí", "No"),
+         new_smoking_history = ifelse(smoking_history == "never", "Nunca", "Sí"),
+         new_bmi = bmi * 2.20462, # conversión de kg/m^2 a lb/pulg^2
+         new_diabetes = ifelse(diabetes == 1 & HbA1c_level >= 6.5 | blood_glucose_level >= 200, "Sí", "No"))
+
+#ajustar el ancho de pantalla para mostrar todas las columnas
+options(width = 100)
+
+# Imprimir el data frame con las nuevas columnas
+head(datos)
+```
+<span style="color: green"> <u>La primera columna</u> se llama new_hypertension. Esta fórmula recodifica la variable hypertension, que toma valores 0 o 1, en una variable binaria que indica si el paciente tiene hipertensión (valor 1) o no (valor 0). </span>
+
+<span style="color: green"> <u>La segunda columna</u> se llama new_heart_disease. Esta fórmula recodifica la variable heart_disease, que toma valores 0 o 1, en una variable binaria que indica si el paciente tiene enfermedad cardíaca (valor 1) o no (valor 0). </span>
+
+<span style="color: green"> <u>La tercera columna</u> se llama new_smoking_history. Esta fórmula recodifica la variable smoking_history, que toma valores "never", "formerly" o "currently", en una variable binaria que indica si el paciente ha fumado alguna vez (valor "Sí") o no (valor "Nunca"). </span>
+
+<span style="color: green"> <u>La cuarta columna</u> se llama new_bmi. Esta fórmula convierte la variable bmi de kilogramos por metro cuadrado (kg/m^2) a libras por pulgada cuadrada (lb/pulg^2).     </span>
+
+<span style="color: green"> <u>La quinta columna</u> se llama new_diabetes. Esta fórmula recodifica la variable diabetes. Si el paciente tiene diabetes (valor 1) y su nivel de HbA1c es mayor o igual a 6.5 o su nivel de glucosa en sangre es mayor o igual a 200, entonces la nueva variable toma el valor "Sí". En caso contrario, toma el valor "No". </span>
+
+<span style="color:blue; font-size:2em;">Calcular tablas de frecuencias simples según una o varias variables cualitativas.</span>
+
+### Tabla de frecuencias en funcion del genero
+```{r}
+# Cargar datos
+data <- read.csv("new_columns.csv")
+
+# Frecuencias absolutas.
+ni <- table(data$gender)
+# Frecuencias relativas
+fi <- prop.table(ni)
+# Frecuencias acumuladas.
+Ni <- cumsum(ni)
+# Frecuencias relativas acumuladas.
+Fi <- cumsum(fi)
+# Creación de un data frame con las frecuencias.
+tabla_frec <- cbind(ni, fi, Ni, Fi)
+print(tabla_frec)
+```
+
+### Tabla de frecuencias en funcion del historial de fumador del paciente 
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columna de interés
+fuma <- df$smoking_history
+
+# Contar frecuencias
+ni <- table(fuma)
+
+# Calcular frecuencias relativas
+fi <- prop.table(ni)
+
+# Calcular frecuencias acumuladas
+Ni <- cumsum(ni)
+
+# Calcular frecuencias relativas acumuladas
+Fi <- cumsum(fi)
+
+# Crear data frame con las frecuencias
+tabla_frec <- data.frame(ni = ni, fi = fi, Ni = Ni, Fi = Fi)
+
+tabla_frec
+```
+
+<span style="color:blue; font-size:2em;">Calcular tablas de frecuencias agrupadas según una o varias variables cualitativas.</span>
+
+### Tabla de frecuencias en funcion del genero y el historial de fumador del paciente
+
+```{r}
+# Cargar datos
+data <- read.csv("new_columns.csv")
+
+# Tabla de frecuencia agrupada por la variable 'gender' y 'smoking_history'
+freq_table <- table(data$gender, data$smoking_history)
+
+print(freq_table)
+```
+
+
+### Tabla de frecuencias en funcion del genero y el estado de diabetes del paciente
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+genero <- df$gender
+diabetes <- df$diabetes
+
+# Agrupar los datos por género y estado de diabetes
+freq_table <- table(genero, diabetes)
+
+print(freq_table)
+```
+
+<span style="color:blue; font-size:2em;">Calcular los principales estadísticos.</span>
+
+```{r}	
+summary(df)
+```
+
+```{r}	
+library(vtable)
+st(df)
+```
+
+```{r}
+library(summarytools)
+descr(df) %>%
+kable() %>%
+kable_styling()
+print(dfSummary(df, plain.ascii = FALSE, style = "grid"), method = "render")
+```
+
+## Calcular los principales estadísticos de la variable 'age'
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# calcular la moda de la variable 'age'
+edad <- df$age
+mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+modas_edad <- mode(edad)
+print(modas_edad)
+
+edad <- df$age
+tabla_edades <- table(edad)
+print(tabla_edades)
+```
+
+<span style="color: green"> La moda es una medida de tendencia central que indica el valor más frecuente en un conjunto de datos. En este caso, la moda de la variable 'age' es 80. Esto significa que la edad más frecuente en el conjunto de datos es 80 años. </span>
+
+```{r}
+# calcular la media de la variable 'age'
+media <- mean(df$age)
+print(media)
+```
+
+<span style="color: green"> La media es una medida de tendencia central comúnmente utilizada en estadística para resumir un conjunto de datos. La media de 46.782 en este contexto significa que la edad promedio en el conjunto de datos es aproximadamente 46.782 años. Es decir, si se suman todas las edades y se dividen entre el número de observaciones, el resultado será aproximadamente 46.782. 
+
+```{r}
+# calcular la mediana de la variable 'age'
+mediana <- median(df$age)
+print(mediana)
+```
+
+<span style="color: green"> Este resultado indica que la mediana de la variable 'age' es 46. La mediana es una medida de tendencia central que divide los datos en dos partes iguales, de modo que el 50% de los datos están por debajo de la mediana y el otro 50% están por encima. En este caso, una mediana de 46 indica que la mitad de las edades en el conjunto de datos son menores que 46 y la otra mitad son mayores. Es posible que haya algunas edades que tengan el valor exacto de 46, pero también puede haber un rango de edades en ambos lados de la mediana. La mediana es útil cuando se tienen valores extremos o datos atípicos (outliers) en el conjunto de datos, ya que no se ven afectados por los valores extremos y proporcionan una mejor representación de la "típica" o "central" edad en el conjunto de datos.
+
+```{r}	
+# calcular el minimo de la variable 'age'
+minimo <- min(df$age)
+print(minimo)
+```
+
+<span style="color: green"> El minimo valor de la variable 'age' es 2. Esto significa que el paciente más joven en el conjunto de datos tiene 2 años.
+
+```{r}	
+# calcular el maximo de la variable 'age'
+maximo <- max(df$age)
+print(maximo)
+```
+
+<span style="color: green"> El maximo valor de la variable 'age' es 80. Esto significa que el paciente más viejo en el conjunto de datos tiene 80 años.
+
+```{r}	
+#calcular los percentiles 5 y 95 de la variable 'age'
+percentil_5 <- quantile(df$age, 0.05)
+print(percentil_5)
+
+percentil_95 <- quantile(df$age, 0.95)
+print(percentil_95)
+```
+
+<span style="color: green"> El percentil 5 de una variable es un valor que indica que el 5% de los datos de la variable son iguales o menores que ese valor. En este caso, el percentil 5 de la variable 'age' es 16.95, lo que significa que el 5% de las edades en el conjunto de datos son iguales o menores que 16.95. El cálculo de percentiles puede ser útil para analizar la distribución de los datos y para identificar valores extremos o atípicos que puedan afectar el análisis estadístico. Por ejemplo, si el percentil 5 de una variable de interés es significativamente menor que el valor esperado, esto podría indicar la presencia de valores atípicos o errores de medición.
+
+<span style="color: green"> El percentil 95 de una variable es un valor que indica que el 95% de los datos de la variable son iguales o menores que ese valor. En este caso, el percentil 95 de la variable 'age' es 80, lo que significa que el 95% de las edades en el conjunto de datos son iguales o menores que 80. 
+
+```{r}	
+# calcular el rango de la variable 'age'
+rango <- range(df$age)
+print(rango)
+```
+
+<span style="color: green"> El rango de la variable 'age' es 2 y 80. Esto significa que la diferencia entre el valor mínimo y el valor máximo de la variable 'age' es 78.
+
+```{r}	
+# calcular el rango intercuartílico de la variable 'age'
+rango_intercuartilico <- IQR(df$age)
+print(rango_intercuartilico)
+```
+
+<span style="color: green"> Este resultado indica que el rango intercuartílico (IQR, por sus siglas en inglés) de la variable 'age' es 31. El rango intercuartílico es una medida de dispersión que se calcula como la diferencia entre el tercer cuartil (Q3) y el primer cuartil (Q1) de un conjunto de datos. Es decir, el IQR abarca el 50% central de las observaciones de los datos. En este caso, un IQR de 31 indica que el 50% central de las edades en el conjunto de datos se encuentra dentro del rango de 31 años, desde el primer cuartil hasta el tercer cuartil. El IQR es útil para resumir la variabilidad en los datos, especialmente cuando hay valores atípicos o extremos en el conjunto de datos que pueden distorsionar la media o la mediana.
+
+```{r}
+# calcular la cuasivarianza de la variable 'age'
+print(var(df$age))
+```
+
+<span style="color: green"> Este resultado indica que la varianza de la variable 'age' en el conjunto de datos es de 392.0546. La varianza es una medida de la dispersión de los datos que indica cuánto se alejan los valores individuales de la media. En general, una varianza alta indica que los valores individuales se dispersan ampliamente en torno a la media, mientras que una varianza baja indica que los valores individuales se agrupan más cerca de la media. En este caso, una varianza de 392.0546 indica que las edades en el conjunto de datos se distribuyen bastante ampliamente en torno a la media calculada anteriormente. Es posible que haya algunas edades bastante lejanas de la media que estén contribuyendo a la alta varianza.
+
+```{r}	
+# calcular la varianza de la variable 'age'
+varianza <- var(df$age) * (length(df$age) - 1) / length(df$age)
+print(varianza)
+```
+
+<span style="color: green"> Este resultado indica que la varianza de la variable 'age' en el conjunto de datos es de 391.2705. Al calcular la varianza de una muestra de datos, es común ajustar la fórmula para corregir el sesgo que surge debido al hecho de que la varianza de la muestra se estima a partir de una muestra en lugar de toda la población. La fórmula utilizada aquí es una corrección de Bessel para la varianza de la muestra. Al igual que en el caso anterior, una varianza de 391.2705 indica que las edades en el conjunto de datos se distribuyen bastante ampliamente en torno a la media, y es posible que haya algunas edades bastante lejanas de la media que estén contribuyendo a la alta varianza.
+
+```{r}	
+# calcular la desviación estándar de la variable 'age'
+desviacion_estandar <- sd(df$age)
+print(desviacion_estandar)
+```
+
+<span style="color: green"> La desviación estándar es otra medida de la dispersión de los datos, que indica cuánto se alejan los valores individuales de la media en promedio. En este caso, una desviación estándar de 19.80037 indica que las edades en el conjunto de datos se distribuyen ampliamente en torno a la media, ya que una gran cantidad de valores individuales se alejan de la media en más o menos 19.80037 años. La desviación estándar es útil porque se expresa en las mismas unidades que los datos originales y permite interpretar la variabilidad en términos de "qué tan lejos" se alejan los valores individuales de la media.
+
+```{r}	
+# calcular el coeficiente de variación de la variable 'age'
+coeficiente_de_variacion <- sd(df$age) / mean(df$age)
+print(coeficiente_de_variacion)
+```
+
+<span style="color: green"> Este resultado indica que el coeficiente de variación de la variable 'age' en el conjunto de datos es de 0.4232476. El coeficiente de variación es una medida de la variabilidad relativa, que se expresa como el porcentaje de la desviación estándar en relación a la media. En este caso, un coeficiente de variación de 0.4232476 indica que la variabilidad de las edades en el conjunto de datos es relativamente alta en relación a la media. Es decir, la desviación estándar de 19.80037 es un 42.32% del valor medio de 46.782, lo que sugiere que hay una amplia variación en las edades en el conjunto de datos. El coeficiente de variación es una forma útil de comparar la variabilidad de diferentes conjuntos de datos que pueden tener diferentes unidades o escalas de medida.
+
+```{r}	
+# calcular el coeficiente de asimetría de la variable 'age'
+library(moments)
+skewness(df$age)
+```
+
+<span style="color: green"> Este resultado indica que el coeficiente de asimetría (skewness, en inglés) de la variable 'age' en el conjunto de datos es de -0.01002704. El coeficiente de asimetría mide la asimetría de la distribución de los datos. En este caso, un coeficiente de asimetría de -0.01002704 indica que la distribución de las edades en el conjunto de datos es prácticamente simétrica, lo que sugiere que hay una cantidad similar de edades por encima y por debajo de la media. Un valor negativo del coeficiente de asimetría indica que la cola izquierda de la distribución es ligeramente más larga que la cola derecha. En general, un coeficiente de asimetría entre -0.5 y 0.5 se considera como una distribución aproximadamente simétrica.
+
+```{r}	
+# calcular el coeficiente de curtosis de la variable 'age'
+kurtosis(df$age)
+# calcular el coeficiente de curtosis de la variable 'age'
+coeficiente_de_curtosis <- sum((df$age - mean(df$age))^4) / ((length(df$age) - 1) * sd(df$age)^4)
+print(coeficiente_de_curtosis)
+```
+
+<span style="color: green"> Este resultado indica que el coeficiente de curtosis de la variable 'age' en el conjunto de datos es de 2.070974. El coeficiente de curtosis mide el grado de concentración de los datos alrededor de la media y la forma de la distribución en relación a la distribución normal. Un valor del coeficiente de curtosis mayor que 3 indica que la distribución tiene una mayor concentración de datos en la región central (en relación a una distribución normal). Un valor menor que 3 indica que la distribución tiene una menor concentración de datos en la región central. En este caso, el valor del coeficiente de curtosis de 2.070974 indica que la distribución de edades en el conjunto de datos es un poco más concentrada en la región central que la distribución normal. Sin embargo, es importante tener en cuenta que el coeficiente de curtosis no es una medida muy robusta y puede verse afectado por valores atípicos en los datos. Por lo tanto, siempre es necesario analizar también otros estadísticos descriptivos para tener una idea completa de la distribución de los datos.
+
+<span style="color:blue; font-size:2em;">Realizar diagramas de barras</span>
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+genero <- df$gender
+diabetes <- df$diabetes
+
+# Crear tabla de frecuencias
+freq_table <- table(genero, diabetes)
+
+# Crear diagrama de barras
+barplot(freq_table, main = "Diagrama de barras", xlab = "Género", ylab = "Frecuencia", col = c("red", "blue"), legend = rownames(freq_table))
+```
+
+<span style="color: green"> El gráfico generado muestra un diagrama de barras que representa la distribución de la variable "diabetes" en función del género de las personas en el conjunto de datos. La barra roja representa la frecuencia de mujeres y la barra azul representa la frecuencia de hombres. A partir de este gráfico, se pueden obtener varias conclusiones. Primero, se puede observar que la frecuencia de personas no diabéticas es mayor que la frecuencia de personas diabéticas en ambos géneros, pero en especial en el género femenino. Además, la diferencia entre la frecuencia de personas no diabéticas y diabéticas es mayor en el género femenino que en el género masculino. Otra conclusión que se puede obtener es que la distribución de la variable diabetes no es uniforme en función del género, lo que sugiere que el género puede estar relacionado con la presencia de diabetes. Sin embargo, para establecer una relación precisa se necesitaría realizar un análisis estadístico más completo y riguroso que permita determinar si esta diferencia es estadísticamente significativa o no.
+
+<span style="color:blue; font-size:2em;">Realizar histograma</span>
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columna de interés
+edad <- df$age
+
+# Crear histograma
+hist(edad, main = "Histograma", xlab = "Edad", ylab = "Frecuencia", col = "#2fc7c7")
+```
+
+### Histograma con separaciones de intervalos de 10 en 10 unidades
+
+```{r}
+# Cargar paquete ggplot2
+library(ggplot2)
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Crear histograma con intervalos de 10 en 10
+ggplot(df, aes(x = age)) +
+  geom_histogram(binwidth = 10, color = "black", fill = "#2fc7c7") +
+  labs(title = "Histograma", x = "Edad", y = "Frecuencia")
+```
+
+<span style="color: green"> El histograma muestra la distribución de la variable "edad" en la muestra. La mayoría de las edades se encuentran en el rango de 30 a 60 años, lo que indica que la muestra contiene principalmente a personas adultas. La distribución parece ser relativamente simétrica, con una ligera asimetría negativa, lo que sugiere que la media y la mediana están cerca en valor. También se puede observar que hay algunos valores atípicos a la derecha del histograma, indicando que hay algunas personas mayores en la muestra. En general, el histograma proporciona una buena visualización de la distribución de la variable "edad" y puede ser útil para identificar características importantes de la muestra.
+
+<span style="color:blue; font-size:2em;">Realizar diagrama de caja</span>
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columna de interés
+edad <- df$age
+
+# Crear diagrama de caja
+boxplot(edad, main = "Diagrama de caja", xlab = "Edad", ylab = "Frecuencia", col = "#94fa6b")
+```
+
+<span style="color: green"> El diagrama de cajas y bigotes permite visualizar la distribución de los datos de la variable "edad". Los datos se distribuyen simétricamente alrededor de la mediana, que está representada por la línea que divide la caja en dos. La mayoría de los valores se encuentran dentro de la caja, que se extiende desde el primer cuartil (Q1) hasta el tercer cuartil (Q3). La longitud de la caja indica la dispersión intercuartílica de los datos. Los bigotes representan la dispersión total de los datos, excluyendo los valores atípicos (outliers) que se representan mediante puntos fuera de los bigotes. En este caso, no hay valores atípicos y los bigotes se extienden hasta los valores mínimo y máximo de la variable "edad". En general, el diagrama de cajas y bigotes indica que la distribución de la variable "edad" es relativamente simétrica y no tiene valores atípicos, aunque se puede apreciar cierta concentración de valores en torno a la mediana.
+
+<span style="color:blue; font-size:2em;">Realizar diagrama de dispersión</span>
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+
+# Crear diagrama de dispersión
+plot(edad, glucosa, main = "Diagrama de dispersión", xlab = "Edad", ylab = "Glucosa", col = "#d5f256")
+```
+
+<span style="color: green"> El diagrama de dispersión muestra la relación entre la edad y los niveles de glucosa en sangre. Se puede observar que en general, a medida que la edad aumenta, también lo hacen los niveles de glucosa. Sin embargo, también se pueden ver algunas excepciones a esta tendencia general, lo que sugiere que otros factores pueden estar influyendo en los niveles de glucosa en sangre.
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$heart_disease
+
+# Crear diagrama de dispersión
+plot(edad, glucosa, main = "Diagrama de dispersión", xlab = "Edad", ylab = "Enfermedad en el corazon", col = "#62b4e4")
+```
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$diabetes
+
+# Crear diagrama de dispersión
+plot(edad, glucosa, main = "Diagrama de dispersión", xlab = "edad", ylab = "Diabetes", col = "#f9567c")
+```
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$hypertension
+
+# Crear diagrama de dispersión
+plot(edad, glucosa, main = "Diagrama de dispersión", xlab = "Edad", ylab = "Hipertension", col = "#86e14e")
+```
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$blood_glucose_level
+glucosa <- df$HbA1c_level
+
+# Crear diagrama de dispersión
+plot(edad, glucosa, main = "Diagrama de dispersión", xlab = "Glucosa en sangre", ylab = "Nivel de HbA1c", col = "#62b4e4")
+```
+
+```{r}	
+library(ggplot2)
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Crear gráfico de dispersión
+ggplot(df, aes(x = age, y = bmi)) +
+  geom_point() +
+  labs(title = "Relación entre edad y BMI", x = "Edad", y = "BMI")
+```
+
+<span style="color: green"> El gráfico de dispersión muestra una relación aparente entre la edad y el índice de masa corporal (BMI), donde se puede observar que a medida que aumenta la edad, también aumenta el BMI en general. Sin embargo, es importante tener en cuenta que el gráfico solo muestra una correlación entre estas dos variables y no necesariamente una relación causal directa. Además, hay puntos dispersos en el gráfico que indican que la relación no es completamente lineal y que hay otros factores que influyen en el BMI de una persona. Por lo tanto, es importante realizar un análisis más detallado y considerar otros factores relevantes antes de sacar conclusiones definitivas.
+
+<span style="color:blue; font-size:2em;">Realizar diagrama de sectores</span>
+
+```{r}
+datos <- read.csv("new_columns.csv")
+tabla <- table(datos$diabetes)
+pie(tabla, main="Diagrama de sectores - Diabetes", labels=c("No tiene diabetes", "Tiene diabetes"), col=c("lightblue", "pink"))
+```
+
+<span style="color: green"> Este diagrama de sectores muestra la proporción de personas con y sin diabetes en los datos. La mayoría de las personas en el conjunto de datos no tienen diabetes (alrededor del 65%), mientras que alrededor del 35% sí la tienen.
+
+<span style="color:blue; font-size:2em;">Construir un modelo de regresion lineal</span>
+
+### Ejemplo 1: Relación entre edad y niveles de glucosa en sangre
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+
+# Crear modelo de regresión lineal
+modelo <- lm(glucosa ~ edad, data = df)
+
+# Ver el resumen del modelo
+summary(modelo)
+```
+
+<span style="color: green"> El modelo de regresión lineal indica que existe una relación lineal positiva débil entre la edad y los niveles de glucosa en sangre. El coeficiente de edad (0.24239) indica que, en promedio, por cada año de edad, se espera que los niveles de glucosa en sangre aumenten en 0.24239 mg/dL, después de controlar por otros factores. El valor p (<0.05) indica que este coeficiente es estadísticamente significativo, lo que sugiere que la edad es un predictor significativo de los niveles de glucosa en sangre. Sin embargo, el R-cuadrado ajustado (0.01309) sugiere que la edad explica solo el 1.31% de la variabilidad en los niveles de glucosa en sangre, lo que indica que otros factores pueden tener una mayor influencia en los niveles de glucosa en sangre. El error estándar residual (38.85) sugiere que la mayoría de los valores de glucosa en sangre se encuentran dentro de +/- 38.85 mg/dL de la línea de regresión.
+
+### Ejemplo 2: Relación entre edad y BMI
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Ajustar modelo de regresión lineal
+modelo <- lm(bmi ~ age, data = df)
+
+# Ver el resumen del modelo
+summary(modelo)
+```
+
+```{r}	
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(broom)
+library(kableExtra)
+
+# Construimos un data frame con el ajuste de los modelos.
+modelos <- tibble(
+  Lineal = list(lm(age ~ bmi, df)),
+  Cuadratico = list(lm(age ~ bmi + I(bmi^2), df)),
+  Exponencial = list(lm(log(age) ~ bmi, df)),
+  Logaritmico = list(lm(age ~ log(bmi), df)),
+  Potencial = list(lm(log(age) ~ log(bmi), df)),
+  Inverso = list(lm(age ~ I(1/bmi), df)),
+  Sigmoidal = list(lm(log(age) ~ I(1/bmi), df))
+) %>%
+  # Reestructuramos el data frame para tener todos los modelos en la misma columna.
+  pivot_longer(everything(), names_to = "Tipo_Modelo", values_to = "Modelo") %>%
+  # Obtenemos un resumen del ajuste de cada modelo en formato organizado (se obtiene una lista con los parámetros que describen el ajuste de cada modelo).
+  mutate(Resumen = map(Modelo, glance)) %>%
+  # Desanidamos el resumen (se obtiene una columna para cada parámetro del resumen del ajuste de los modelos).
+  unnest(Resumen) %>%
+  # Ordenamos el data frame por el coeficiente de determinación.
+  arrange(-r.squared)
+
+modelos %>%
+  select(Tipo_Modelo, r.squared) %>%
+  kable(col.names = c("Tipo de Modelo", "R²")) %>%
+  kable_styling(full_width = F)
+```
+
+<span style="color: green"> Los valores de R² son bajos en todos los casos, lo que indica que los modelos no explican la variabilidad de los datos de manera satisfactoria. En general, R² cercano a 1 indica un buen ajuste, mientras que valores cercanos a 0 indican un mal ajuste. La relación entre las variables no se ajusta bien a un modelo específico, esto sugieren que ninguno de estos modelos es adecuado para describir la relación entre las variables de los datos.
+
+
+<span style="color:blue; font-size:2em;">Construir un modelo de regresion no lineal</span>
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+
+# Crear modelo de regresión no lineal
+modelo <- nls(glucosa ~ a * edad^b, data = df, start = list(a = 1, b = 1))
+
+# Ver el resumen del modelo
+summary(modelo)
+```
+
+<span style="color: green"> El modelo de regresión no lineal indica que la relación entre la edad y la glucosa no es lineal, ya que se utiliza una función no lineal para modelar la relación. En este caso, se utiliza una función potencial, donde se estima que la glucosa aumenta a una tasa decreciente a medida que la edad aumenta. Los coeficientes del modelo indican que un aumento de 1 unidad en la edad se asocia con un aumento en la glucosa en promedio de 0.05955 unidades, y el valor a de 112.59194 indica que la glucosa promedio para una edad de cero años es de 112.59 unidades. El p-valor asociado con ambos coeficientes es menor que 0.05, lo que indica que ambos coeficientes son significativamente diferentes de cero y se puede concluir que hay una relación significativa entre la edad y la glucosa.
+
+<span style="color:blue; font-size:2em;">Comparar distintos modelos de regresión.</span>
+
+```{r}	
+# Cargar datos
+datos <- read.csv("new_columns.csv")
+
+# Dividir los datos en conjunto de entrenamiento y prueba
+set.seed(123) # Para reproducibilidad de resultados
+muestra <- sample(2, nrow(datos), replace = TRUE, prob = c(0.7, 0.3))
+entrenamiento <- datos[muestra == 1, ]
+prueba <- datos[muestra == 2, ]
+# Modelo de regresión lineal
+modelo1 <- lm(blood_glucose_level ~ age + bmi + HbA1c_level, data = entrenamiento)
+
+# Modelo de regresión no lineal
+modelo2 <- nls(blood_glucose_level ~ a * age^b + c * bmi, data = entrenamiento,
+               start = list(a = 1, b = 1, c = 1))
+# Evaluar el rendimiento del modelo de regresión lineal
+prediccion1 <- predict(modelo1, newdata = prueba)
+R2_1 <- summary(modelo1)$r.squared
+MSE_1 <- mean((prediccion1 - prueba$blood_glucose_level)^2)
+MAE_1 <- mean(abs(prediccion1 - prueba$blood_glucose_level))
+
+# Evaluar el rendimiento del modelo de regresión no lineal
+prediccion2 <- predict(modelo2, newdata = prueba)
+R2_2 <- summary(modelo2)$r.squared
+MSE_2 <- mean((prediccion2 - prueba$blood_glucose_level)^2)
+MAE_2 <- mean(abs(prediccion2 - prueba$blood_glucose_level))
+# Comparar los modelos
+resultados <- data.frame(Modelo = c("Regresión lineal", "Regresión no lineal"),
+                         R2 = c(R2_1, R2_2),
+                         MSE = c(MSE_1, MSE_2),
+                         MAE = c(MAE_1, MAE_2))
+print(resultados)
+```
+
+<span style="color: green"> R2_2 <- Esta línea de código calcula el coeficiente de determinación R cuadrado del modelo de regresión y lo almacena en la variable R2_2. El R cuadrado es una medida de qué tan bien el modelo se ajusta a los datos, y su valor oscila entre 0 y 1, donde 1 significa un ajuste perfecto y 0 significa que el modelo no explica la variabilidad en los datos. Un valor alto de R cuadrado indica que el modelo explica bien la variabilidad en los datos. 
+
+<span style="color: green"> MSE_2 <- Esta línea de código calcula el error cuadrático medio (MSE) del modelo de regresión y lo almacena en la variable MSE_2. El MSE es una medida de la calidad del ajuste del modelo y mide la cantidad promedio de error al cuadrado entre las predicciones del modelo y los valores reales. Un MSE bajo indica que el modelo tiene un buen ajuste a los datos.
+
+<span style="color: green"> MAE_2 <- Esta línea de código calcula el error absoluto medio (MAE) del modelo de regresión y lo almacena en la variable MAE_2. El MAE es una medida de la precisión del modelo y mide la cantidad promedio de error absoluto entre las predicciones del modelo y los valores reales. Un MAE bajo indica que el modelo tiene una buena precisión en sus predicciones.
+
+<span style="color:blue; font-size:2em;">Hacer predicciones con un modelo de regresion</span>
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+
+# Crear modelo de regresión lineal
+modelo <- lm(glucosa ~ edad, data = df)
+
+# Hacer predicciones
+
+# Predicción para una edad de 50 años
+prediccion <- predict(modelo, data.frame(edad = 50))
+print(prediccion)
+
+# Predicción para una edad de 60 años
+prediccion <- predict(modelo, data.frame(edad = 60))
+print(prediccion)
+
+# Predicción para una edad de 70 años
+prediccion <- predict(modelo, data.frame(edad = 70))
+print(prediccion)
+```
+
+<span style="color: green"> Algunas conclusiones que se pueden extraer de esto son:
+
+<span style="color: green"> Relación lineal: El modelo de regresión lineal asume una relación lineal entre la variable de respuesta (glucosa en sangre) y la variable predictora (edad). Esto implica que se espera que los niveles de glucosa en sangre aumenten o disminuyan linealmente a medida que la edad aumenta o disminuye.
+
+<span style="color: green"> Coeficiente de regresión: Al ajustar el modelo de regresión lineal, se obtiene un coeficiente de regresión que representa el cambio esperado en los niveles de glucosa en sangre por cada unidad de cambio en la edad. En este caso, parece que el coeficiente obtenido implica que, en promedio, se espera un aumento de 141.412 en los niveles de glucosa en sangre por cada año adicional de edad.
+
+<span style="color: green"> Predicciones individuales: Utilizando el modelo ajustado, se pueden hacer predicciones individuales sobre los niveles de glucosa en sangre para valores específicos de edad. En el ejemplo proporcionado, se realiza una predicción para una edad de 50 años y se obtiene un valor predicho de 141.412 para los niveles de glucosa en sangre.
+
+<span style="color: green"> Es importante tener en cuenta que estas conclusiones son específicas para el modelo de regresión lineal ajustado y los datos utilizados. Además, es fundamental realizar una evaluación adecuada del modelo, incluyendo el análisis de residuos y otras medidas de bondad de ajuste, antes de sacar conclusiones definitivas sobre la relación entre la edad y los niveles de glucosa en sangre.
+
+<span style="color:blue; font-size:2em;">Pivotar el Data Frame de formato ancho a largo</span>
+
+```{r}
+library(tidyr)
+
+# Pivoteo del Data Frame de formato ancho a largo
+df_largo <- df %>%
+  pivot_longer(cols = c("age", "hypertension", "bmi", "heart_disease", "diabetes"),
+               names_to = "variable",
+               values_to = "valor")
+
+# Visualización del nuevo Data Frame
+print(df_largo)
+```
+
+<span style="color:blue; font-size:2em;">Comparar la distribución observada de una variable cuantitativa discreta con su distribución teórica a partir de sus percentiles.</span>
+
+```{r}
+# Generar valores de la distribución observada
+observada <- c(1, 2, 2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 6, 7, 8, 9)
+
+# Calcular los percentiles de la distribución observada
+percentiles_obs <- quantile(observada, probs = seq(0, 1, 0.01))
+
+# Especificar la distribución teórica y ajustarla a los datos
+library(MASS)
+ajuste_poisson <- fitdistr(observada, "Poisson")
+
+# Generar una muestra aleatoria de la distribución teórica
+muestra_poisson <- rpois(n = length(observada), lambda = ajuste_poisson$estimate)
+
+# Calcular los percentiles de la distribución teórica generada
+percentiles_teo <- quantile(muestra_poisson, probs = seq(0, 1, 0.01))
+
+# Graficar las distribuciones observada y teórica en un mismo gráfico
+plot(percentiles_obs, seq(0, 1, 0.01), type = "b", col = "blue", pch = 19, 
+     xlab = "Número de medicamentos", ylab = "Percentiles", main = "Comparación de distribuciones observada y teórica")
+points(percentiles_teo, seq(0, 1, 0.01), type = "b", col = "red", pch = 19)
+legend("topleft", legend = c("Observada", "Teórica"), col = c("blue", "red"), pch = 19, cex = 0.8)
+```
+
+<span style="color:blue; font-size:2em;">Comparar la distribución observada de una variable cuantitativa continua con su distribución teórica a partir de sus percentiles</span>
+
+```{r}
+# Cargar los datos
+datos <- read.csv("new_columns.csv")
+
+# Seleccionar la columna de interés
+glucosa <- datos$blood_glucose_level
+
+# Calcular los percentiles de la distribución observada
+percentiles_obs <- quantile(glucosa, probs = seq(0, 1, 0.01))
+
+# Especificar la distribución teórica y ajustarla a los datos
+library(MASS)
+ajuste_poisson <- fitdistr(glucosa, "Poisson")
+
+# Generar una muestra aleatoria de la distribución teórica
+muestra_poisson <- rpois(n = length(glucosa), lambda = ajuste_poisson$estimate)
+
+# Calcular los percentiles de la distribución teórica generada
+percentiles_teo <- quantile(muestra_poisson, probs = seq(0, 1, 0.01))
+
+# Graficar las distribuciones observada y teórica en un mismo gráfico
+plot(percentiles_obs, seq(0, 1, 0.01), type = "b", col = "blue", pch = 19, 
+     xlab = "blood_glucose_level", ylab = "Percentiles", main = "Comparación de distribuciones observada y teórica")
+points(percentiles_teo, seq(0, 1, 0.01), type = "b", col = "red", pch = 19)
+legend("topleft", legend = c("Observada", "Teórica"), col = c("blue", "red"), pch = 19, cex = 0.8)
+```
+
+<span style="color:blue; font-size:2em;">Programar funciones para automatizar los análisis de datos</span>
+
+```{r}	
+# Definir función para calcular media y desviación estándar
+calcular_estadisticas <- function(datos) {
+  media <- mean(datos)
+  desviacion_estandar <- sd(datos)
+  return(list(media = media, desviacion_estandar = desviacion_estandar))
+}
+
+# Ejemplo de uso
+datos <- c(1, 2, 3, 4, 5)
+resultados <- calcular_estadisticas(datos)
+print(resultados$media)
+print(resultados$desviacion_estandar)
+```
+
+<span style="color:blue; font-size:2em;">Simular un experimento aleatorio mediante la generación de números aleatorios a partir
+de una distribución discreta o continua y describir la variable resultante.</span>
+
+```{r}
+# Establecer la semilla aleatoria para reproducibilidad
+set.seed(123)
+
+# Generar una muestra aleatoria de tamaño n
+n <- 1000
+age <- rnorm(n, mean = 46.782, sd = 19.80037)
+
+# Verificar la media y desviación estándar de la muestra generada
+media <- mean(age)
+desviacion <- sd(age)
+
+cat("Media:", media, "\n")
+cat("Desviación estándar:", desviacion, "\n")
+
+# Graficar la distribución de la muestra generada
+hist(age, breaks = 20, col = "blue", xlab = "Edad", ylab = "Frecuencia", main = "Distribución de edades")
+```
+
+<span style="color:red; font-size:4em;"> *** Extra de los extras ***
+
+<span style="color:blue; font-size:2em;">Diagrama de barras agrupado por género y facetas por rango de edad</span>
+
+```{r}	
+library(ggplot2)
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Crear una nueva columna para el rango de edad
+df$rango_edad <- cut(df$age, breaks = c(0, 18, 30, 40, 50, 60, Inf), 
+                     labels = c("0-18", "18-30", "30-40", "40-50", "50-60", ">60"))
+
+# Crear el gráfico de barras
+ggplot(df, aes(x = diabetes, fill = gender)) +
+  geom_bar() +
+  facet_wrap(~ rango_edad) +
+  labs(x = "Diabetes", y = "Count", title = "Diabetes por género y rango de edad")
+
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de cajas y bigotes agrupado por género y facetas por rango de edad</span>
+
+```{r}
+library(ggplot2)
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Crear variable rango_edad
+df$rango_edad <- cut(df$age, breaks = c(0, 18, 35, 50, Inf), 
+                     labels = c("0-18", "19-35", "36-50", "51+"))
+
+# Crear diagrama de cajas y bigotes
+ggplot(df, aes(x = gender, y = blood_glucose_level)) +
+  geom_boxplot() +
+  facet_grid(. ~ rango_edad) +
+  labs(title = "Niveles de glucosa en sangre por género y edad",
+       x = "Género", y = "Nivel de glucosa en sangre")
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de sectores agrupado por género y facetas por rango de edad</span>
+
+```{r}
+df <- read.csv("new_columns.csv")
+df$rango_edad <- cut(df$age, breaks = c(0, 18, 40, 60, 100))
+df$diabetes <- as.factor(df$diabetes)
+
+library(ggplot2)
+ggplot(df, aes(x = "", fill = diabetes)) +
+  geom_bar() +
+  facet_grid(rows = vars(rango_edad), cols = vars(gender)) +
+  coord_polar(theta = "y") +
+  labs(fill = "") +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de lineas</span>
+
+```{r}	
+library(ggplot2)
+
+# Cargar los datos del archivo csv
+datos <- read.csv("new_columns.csv")
+
+# Crear el diagrama de líneas
+ggplot(datos, aes(x=age, y=blood_glucose_level, group=1)) +
+  geom_line(color="#00BFC4") +
+  labs(x="Edad", y="Nivel de glucosa en sangre") +
+  theme_minimal()
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de violin</span>
+
+```{r}	
+library(ggplot2)
+
+# Leer el archivo CSV
+df <- read.csv("new_columns.csv")
+
+# Generar el diagrama de violín
+ggplot(df, aes(x = gender, y = bmi, fill = gender)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(10, 60), breaks = seq(10, 60, 5)) +
+  labs(x = "Género", y = "BMI", fill = "Género") +
+  ggtitle("Distribución del BMI por género")
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de medias</span>
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Cargar datos desde CSV
+df <- read.csv("new_columns.csv")
+
+# Diagrama de medias
+df %>% 
+  ggplot(aes(x = diabetes, y = age, colour = diabetes)) + 
+  # Puntos de medias
+  stat_summary(fun="mean", size=3,  geom="point", position=position_dodge(width=0.25)) + 
+  # Intervalos de confianza para la media
+  stat_summary(fun.data = function(x) mean_cl_normal(x, conf.int=0.95), geom = "pointrange", position=position_dodge(width=0.25)) +
+  # Escala para el eje Y
+  scale_y_continuous(limits=c(0, max(df$age)), breaks = seq(0, max(df$age), 10))
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de densidad</span>
+
+```{r}
+library(ggplot2)
+
+# Leer el archivo CSV con los datos
+df <- read.csv("new_columns.csv")
+
+# Crear el gráfico de densidad
+ggplot(df, aes(x = bmi, fill = diabetes)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(values = c("blue", "red"), name = "Diabetes") +
+  labs(x = "BMI", y = "Densidad") +
+  theme_classic()
+```
+
+<span style="color:blue; font-size:2em;">Diagrama de dispersión</span>
+
+```{r}
+library(ggplot2)
+# Cargar el archivo CSV
+df <- read.csv("new_columns.csv")
+# Inicializar el gráfico con la edad en el atributo x y el bmi en el atributo y.
+ggplot(df, aes(x = age, y = bmi)) +
+  # Añadir la capa de puntos.
+  geom_point() +
+  # Añadir la capa de ajuste de regresión polinomial local loess.
+  geom_smooth(method = "loess")
+```
+
+
+<span style="color:blue; font-size:2em;">Diagrama de sectores agrupando por intervalos de 20 en 20 unidades</span>
+
+```{r}
+# Leer archivo CSV
+df <- read.csv("new_columns.csv")
+
+# Crear columna con grupos de edad
+df$grupo_edad <- cut(df$age, breaks = seq(0, 100, 20))
+
+# Cargar paquete ggplot2
+library(ggplot2)
+
+# Crear diagrama de sectores
+ggplot(df, aes(x = "", fill = grupo_edad)) +
+  geom_bar(width = 1) +
+  coord_polar(theta = "y") +
+  labs(fill = "Edad") +
+  theme_void()
+```
+
+
+
+
+
+
+
+<center>
+<span style="border: 2px solid black; padding: 5px; background-image: linear-gradient(to right, red, yellow, green); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 4em;">Parte 2, trabajo 2º cruso</span>
+</center>
+
+
+```{r}	
+# cuantos datos atipicos hay en cada variable 
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+# Crear diagrama de caja
+boxplot(edad, main = "Diagrama de caja", xlab = "Edad", ylab = "Frecuencia", col = "#94fa6b")
+boxplot(glucosa, main = "Diagrama de caja", xlab = "Glucosa", ylab = "Frecuencia", col = "#94fa6b")
+boxplot(bmi, main = "Diagrama de caja", xlab = "bmi", ylab = "Frecuencia", col = "#94fa6b")
+boxplot(HbA1c, main = "Diagrama de caja", xlab = "HbA1c", ylab = "Frecuencia", col = "#94fa6b")
+
+# histograma
+hist(edad, breaks = 20, col = "blue", xlab = "Edad", ylab = "Frecuencia", main = "Distribución de edades")
+hist(glucosa, breaks = 20, col = "blue", xlab = "Glucosa", ylab = "Frecuencia", main = "Distribución de glucosa")
+hist(bmi, breaks = 20, col = "blue", xlab = "bmi", ylab = "Frecuencia", main = "Distribución de bmi")
+hist(HbA1c, breaks = 20, col = "blue", xlab = "HbA1c", ylab = "Frecuencia", main = "Distribución de HbA1c")
+
+# cuantos datos atipicos hay en cada variable
+# Edad
+summary(edad)
+# Glucosa
+summary(glucosa)
+# bmi
+summary(bmi)
+# HbA1c
+summary(HbA1c)
+```
+
+```{r}
+#crear una tabla con la media y la varianza de cada variable
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+# Crear tabla con la media, la varianza y los datos atipicos de cada variable
+
+# Edad
+media_edad <- mean(edad)
+varianza_edad <- var(edad)
+datos_atipicos_edad <- length(boxplot.stats(edad)$out)
+
+# Glucosa
+media_glucosa <- mean(glucosa)
+varianza_glucosa <- var(glucosa)
+datos_atipicos_glucosa <- length(boxplot.stats(glucosa)$out)
+
+# bmi
+media_bmi <- mean(bmi)
+varianza_bmi <- var(bmi)
+datos_atipicos_bmi <- length(boxplot.stats(bmi)$out)
+
+# HbA1c
+media_HbA1c <- mean(HbA1c)
+varianza_HbA1c <- var(HbA1c)
+datos_atipicos_HbA1c <- length(boxplot.stats(HbA1c)$out)
+
+# Crear tabla
+tabla <- data.frame(media = c(media_edad, media_glucosa, media_bmi, media_HbA1c),
+                    varianza = c(varianza_edad, varianza_glucosa, varianza_bmi, varianza_HbA1c),
+                    datos_atipicos = c(datos_atipicos_edad, datos_atipicos_glucosa, datos_atipicos_bmi, datos_atipicos_HbA1c))
+rownames(tabla) <- c("Edad", "Glucosa", "bmi", "HbA1c")
+print(tabla)
+```
+
+
+La media es una medida estadística que representa el valor típico o promedio de un conjunto de datos. Se calcula sumando todos los valores en el conjunto y dividiendo el resultado por el número total de observaciones. La media es sensible a los valores extremos y proporciona una indicación central de la distribución de los datos. Es una medida de tendencia central ampliamente utilizada en estadísticas descriptivas.
+
+La varianza es una medida de dispersión que cuantifica la extensión o dispersión de un conjunto de datos. Se calcula tomando la diferencia al cuadrado entre cada valor y la media, sumando estos cuadrados y dividiendo por el número total de observaciones. La varianza proporciona información sobre la variabilidad de los datos. Valores mayores de varianza indican mayor dispersión, mientras que valores menores indican menor dispersión. La raíz cuadrada de la varianza da lugar a la desviación estándar, otra medida común de dispersión.
+
+Los valores atípicos, también conocidos como outliers en inglés, son puntos de datos que se desvían significativamente de la mayoría de los otros puntos en un conjunto de datos. Estos valores atípicos pueden tener un impacto desproporcionado en el análisis estadístico, ya que pueden afectar negativamente la precisión de ciertas estadísticas descriptivas y sesgar los resultados de pruebas estadísticas.
+
+
+Edad:
+
+Media: La edad promedio es de aproximadamente 46.78.
+Varianza: La varianza de la edad es de aproximadamente 392.05.
+Datos Atípicos: No se observan datos atípicos en la variable 'Edad'.
+
+Glucosa:
+
+Media: La media de la glucosa es de alrededor de 140.63.
+Varianza: La varianza de la glucosa es de aproximadamente 1529.17.
+Datos Atípicos: Se identifican 16 datos atípicos en la variable 'Glucosa'.
+
+bmi (Índice de Masa Corporal):
+
+Media: El bmi promedio es de alrededor de 28.24.
+Varianza: La varianza del bmi es de aproximadamente 49.64.
+Datos Atípicos: Se observan 23 datos atípicos en la variable 'bmi'.
+
+HbA1c:
+
+Media: La media de HbA1c es de aproximadamente 5.68.
+Varianza: La varianza de HbA1c es de aproximadamente 1.28.
+Datos Atípicos: No se observan datos atípicos en la variable 'HbA1c'.
+
+Conclusiones Generales:
+
+La edad parece tener una distribución sin datos atípicos, con una varianza moderada.
+
+La glucosa muestra una mayor variabilidad (alta varianza) y se identifican datos atípicos, lo que podría indicar una mayor heterogeneidad en los niveles de glucosa.
+
+El bmi tiene una varianza moderada y presenta un número considerable de datos atípicos, lo que sugiere variabilidad en los índices de masa corporal.
+
+HbA1c muestra una distribución sin datos atípicos y una varianza relativamente baja.
+
+Estas conclusiones proporcionan una visión general de la distribución y características estadísticas de las variables mencionadas. La presencia de datos atípicos y la variabilidad en las varianzas indican la necesidad de una evaluación más detallada y posiblemente la aplicación de técnicas específicas para abordar estos aspectos en el análisis de datos.
+
+```{r}
+# Calcular la correlación entre las variables
+correlation_matrix <- cor(df[, c("age", "blood_glucose_level", "bmi", "HbA1c_level")])
+
+# Imprimir la matriz de correlación
+print("Matriz de Correlación:")
+print(correlation_matrix)
+
+```
+
+La matriz de correlación proporciona información sobre las relaciones lineales entre las variables analizadas. Cada valor en la matriz representa el coeficiente de correlación entre las dos variables correspondientes. Aquí está la interpretación de la matriz de correlación dada:
+
+Interpretación:
+
+Entre 'age' y las Otras Variables:
+
+Existe una correlación positiva débil entre 'age' y 'blood_glucose_level' (0.12), 'bmi' (0.15), y 'HbA1c_level' (0.20). Esto sugiere que a medida que la edad aumenta, también tiende a aumentar ligeramente la glucosa en la sangre, el índice de masa corporal (bmi) y los niveles de HbA1c.
+
+Entre 'blood_glucose_level' y las Otras Variables:
+
+La correlación entre 'blood_glucose_level' y 'bmi' es muy baja (0.03), indicando una relación casi nula entre estas dos variables.
+Existe una correlación moderada positiva entre 'blood_glucose_level' y 'HbA1c_level' (0.16). Esto sugiere que niveles más altos de glucosa en sangre están asociados con niveles más altos de HbA1c.
+Entre 'bmi' y 'HbA1c_level':
+
+La correlación entre 'bmi' y 'HbA1c_level' es moderada (0.18), indicando una relación positiva, aunque no muy fuerte.
+
+Conclusiones Generales:
+
+Las correlaciones son relativamente bajas, lo que sugiere que las variables tienen asociaciones lineales débiles entre sí.
+La fuerza y la dirección de la correlación proporcionan información sobre cómo las variables cambian juntas. En este caso, las asociaciones son, en su mayoría, débiles.
+Es importante tener en cuenta que la correlación no implica causalidad, y otras variables o factores podrían influir en estas relaciones. Además, las correlaciones no capturan relaciones no lineales.
+
+<span style="color:blue; font-size:2em;">
+Estimación por intervalos de confianza al 95% de las medias poblacionales, varianzas 
+poblacionales, diferencia de medias poblacionales y cociente de varianzas 
+poblacionales. Análisis de los resultados. </span>
+
+# medias poblacionales al 95%
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+# Estimación por intervalos de confianza al 95% de las medias poblacionales, varianzas poblacionales, diferencia de medias poblacionales y cociente de varianzas poblacionales. Análisis de los resultados.
+# Edad
+IC_edad_95 <- t.test(edad, conf.level = 0.95)
+IC_edad_95
+# Glucosa
+IC_glucosa_95 <- t.test(glucosa, conf.level = 0.95)
+IC_glucosa_95
+# bmi
+IC_bmi_95 <- t.test(bmi, conf.level = 0.95)
+IC_bmi_95
+# HbA1c
+IC_HbA1c_95 <- t.test(HbA1c, conf.level = 0.95)
+IC_HbA1c_95
+```
+
+# varianzas poblacionales al 95%
+
+```{r}
+# Para la variable edad
+n_edad <- length(edad)
+s2_edad <- var(edad)
+k1_edad <- qchisq(0.975, n_edad-1, lower.tail = FALSE)
+k2_edad <- qchisq(0.025, n_edad-1, lower.tail = FALSE)
+ICVAR_edad_95 <- c(((n_edad-1)*s2_edad)/k2_edad, ((n_edad-1)*s2_edad)/k1_edad)
+ICVAR_edad_95
+# Para la variable glucosa
+n_glucosa <- length(glucosa)
+s2_glucosa <- var(glucosa)
+k1_glucosa <- qchisq(0.975, n_glucosa-1, lower.tail = FALSE)
+k2_glucosa <- qchisq(0.025, n_glucosa-1, lower.tail = FALSE)
+ICVAR_glucosa_95 <- c(((n_glucosa-1)*s2_glucosa)/k2_glucosa, ((n_glucosa-1)*s2_glucosa)/k1_glucosa)
+ICVAR_glucosa_95
+# Para la variable bmi
+n_bmi <- length(bmi)
+s2_bmi <- var(bmi)
+k1_bmi <- qchisq(0.975, n_bmi-1, lower.tail = FALSE)
+k2_bmi <- qchisq(0.025, n_bmi-1, lower.tail = FALSE)
+ICVAR_bmi_95 <- c(((n_bmi-1)*s2_bmi)/k2_bmi, ((n_bmi-1)*s2_bmi)/k1_bmi)
+ICVAR_bmi_95
+# Para la variable HbA1c
+n_HbA1c <- length(HbA1c)
+s2_HbA1c <- var(HbA1c)
+k1_HbA1c <- qchisq(0.975, n_HbA1c-1, lower.tail = FALSE)
+k2_HbA1c <- qchisq(0.025, n_HbA1c-1, lower.tail = FALSE)
+ICVAR_HbA1c_95 <- c(((n_HbA1c-1)*s2_HbA1c)/k2_HbA1c, ((n_HbA1c-1)*s2_HbA1c)/k1_HbA1c)
+ICVAR_HbA1c_95
+```
+
+## medias poblacionales al 80% 
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+# Estimación por intervalos de confianza al 80% de las medias poblacionales
+IC_edad_80 <- t.test(edad, conf.level = 0.80)
+IC_edad_80
+IC_glucosa_80 <- t.test(glucosa, conf.level = 0.80)
+IC_glucosa_80
+IC_bmi_80 <- t.test(bmi, conf.level = 0.80)
+IC_bmi_80
+IC_HbA1c_80 <- t.test(HbA1c, conf.level = 0.80)
+IC_HbA1c_80
+
+```
+
+# varianzas poblacionales al 80%
+
+```{r}	
+# Para la variable edad
+n_edad <- length(edad)
+s2_edad <- var(edad)
+k1_edad <- qchisq(0.90, n_edad-1, lower.tail = FALSE)
+k2_edad <- qchisq(0.10, n_edad-1, lower.tail = FALSE)
+ICVAR_edad_80 <- c(((n_edad-1)*s2_edad)/k2_edad, ((n_edad-1)*s2_edad)/k1_edad)
+ICVAR_edad_80
+
+# Para la variable glucosa
+n_glucosa <- length(glucosa)
+s2_glucosa <- var(glucosa)
+k1_glucosa <- qchisq(0.90, n_glucosa-1, lower.tail = FALSE)
+k2_glucosa <- qchisq(0.10, n_glucosa-1, lower.tail = FALSE)
+ICVAR_glucosa_80 <- c(((n_glucosa-1)*s2_glucosa)/k2_glucosa, ((n_glucosa-1)*s2_glucosa)/k1_glucosa)
+ICVAR_glucosa_80
+
+# Para la variable bmi
+n_bmi <- length(bmi)
+s2_bmi <- var(bmi)
+k1_bmi <- qchisq(0.90, n_bmi-1, lower.tail = FALSE)
+k2_bmi <- qchisq(0.10, n_bmi-1, lower.tail = FALSE)
+ICVAR_bmi_80 <- c(((n_bmi-1)*s2_bmi)/k2_bmi, ((n_bmi-1)*s2_bmi)/k1_bmi)
+ICVAR_bmi_80
+
+# Para la variable HbA1c
+n_HbA1c <- length(HbA1c)
+s2_HbA1c <- var(HbA1c)
+k1_HbA1c <- qchisq(0.90, n_HbA1c-1, lower.tail = FALSE)
+k2_HbA1c <- qchisq(0.10, n_HbA1c-1, lower.tail = FALSE)
+ICVAR_HbA1c_80 <- c(((n_HbA1c-1)*s2_HbA1c)/k2_HbA1c, ((n_HbA1c-1)*s2_HbA1c)/k1_HbA1c)
+ICVAR_HbA1c_80
+
+```
+
+# medias poblacionales al 20%
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+# Estimación por intervalos de confianza al 20% de las medias poblacionales
+IC_edad_20 <- t.test(edad, conf.level = 0.20)
+IC_edad_20
+IC_glucosa_20 <- t.test(glucosa, conf.level = 0.20)
+IC_glucosa_20
+IC_bmi_20 <- t.test(bmi, conf.level = 0.20)
+IC_bmi_20
+IC_HbA1c_20 <- t.test(HbA1c, conf.level = 0.20)
+IC_HbA1c_20
+
+```
+
+# varianzas poblacionales al 20%
+
+```{r}
+# Para la variable edad
+n_edad <- length(edad)
+s2_edad <- var(edad)
+k1_edad <- qchisq(0.90, n_edad-1, lower.tail = FALSE)
+k2_edad <- qchisq(0.80, n_edad-1, lower.tail = FALSE)
+ICVAR_edad_20 <- c(((n_edad-1)*s2_edad)/k2_edad, ((n_edad-1)*s2_edad)/k1_edad)
+ICVAR_edad_20
+
+# Para la variable glucosa
+n_glucosa <- length(glucosa)
+s2_glucosa <- var(glucosa)
+k1_glucosa <- qchisq(0.90, n_glucosa-1, lower.tail = FALSE)
+k2_glucosa <- qchisq(0.80, n_glucosa-1, lower.tail = FALSE)
+ICVAR_glucosa_20 <- c(((n_glucosa-1)*s2_glucosa)/k2_glucosa, ((n_glucosa-1)*s2_glucosa)/k1_glucosa)
+ICVAR_glucosa_20
+
+# Para la variable bmi
+n_bmi <- length(bmi)
+s2_bmi <- var(bmi)
+k1_bmi <- qchisq(0.90, n_bmi-1, lower.tail = FALSE)
+k2_bmi <- qchisq(0.80, n_bmi-1, lower.tail = FALSE)
+ICVAR_bmi_20 <- c(((n_bmi-1)*s2_bmi)/k2_bmi, ((n_bmi-1)*s2_bmi)/k1_bmi)
+ICVAR_bmi_20
+
+# Para la variable HbA1c
+n_HbA1c <- length(HbA1c)
+s2_HbA1c <- var(HbA1c)
+k1_HbA1c <- qchisq(0.90, n_HbA1c-1, lower.tail = FALSE)
+k2_HbA1c <- qchisq(0.80, n_HbA1c-1, lower.tail = FALSE)
+ICVAR_HbA1c_20 <- c(((n_HbA1c-1)*s2_HbA1c)/k2_HbA1c, ((n_HbA1c-1)*s2_HbA1c)/k1_HbA1c)
+ICVAR_HbA1c_20
+```
+
+Al reducir el nivel de confianza, los intervalos de confianza para las medias y varianzas poblacionales de una variable genérica se estrechan, reflejando mayor precisión en nuestras estimaciones, aunque con una menor certeza asociada. A continuación, se proporciona una explicación más general:
+
+Medias Poblacionales:
+
+
+Reducción del Nivel de Confianza: Al disminuir el nivel de confianza, el intervalo de confianza se vuelve más estrecho, lo que significa que estamos expresando una mayor confianza en un rango de valores más específico para la verdadera media poblacional de la variable.
+
+Mayor Precisión: La reducción en la amplitud del intervalo implica una mayor precisión en la estimación de la media poblacional. Estamos más seguros de que la verdadera media se encuentra dentro de este rango más estrecho.
+
+Varianzas Poblacionales:
+
+
+Reducción del Nivel de Confianza: Similar a la interpretación de las medias, al reducir el nivel de confianza, los intervalos de confianza para las varianzas también se estrechan.
+
+Mayor Precisión: La reducción en la amplitud de los intervalos indica mayor precisión en la estimación de las varianzas poblacionales. Estamos expresando una mayor confianza en un rango de valores más específico para la verdadera variabilidad de la variable en la población.
+
+Evidencia Significativa:
+
+En todos los casos, a pesar de la disminución en la certeza asociada con la reducción del nivel de confianza, se mantiene la evidencia significativa para rechazar la hipótesis nula correspondiente a la media y varianza de la variable. Esto se basa en los valores extremadamente pequeños de p obtenidos en todas las pruebas, indicando que las observaciones son altamente improbables bajo la hipótesis nula.
+
+En resumen, la consistencia en la evidencia significativa sugiere de manera robusta que tanto la media como la varianza de la variable difieren significativamente de los valores nulos o de referencia establecidos por la hipótesis nula. La reducción del nivel de confianza implica un equilibrio entre la precisión de las estimaciones y la certeza asociada con esas estimaciones.
+
+# diferencia de medias poblacionales y cociente de varianzas poblacionales. Análisis de los resultados. 
+
+```{r}	
+# Cargar datos
+df <- read.csv("new_columns.csv")
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+# Seleccionar 500 filas al azar para el conjunto de muestra
+set.seed(123)  # Para reproducibilidad
+sample_data <- df[sample(nrow(df), 500), ]
+
+# Realizar una prueba t para la diferencia de medias (Age)
+t_test_age <- t.test(df$age, sample_data$age)
+
+# Calcular el intervalo de confianza del 95% para la diferencia de medias
+ci_diff_means_age <- t_test_age$conf.int
+
+# Realizar una prueba F para el cociente de varianzas (Age)
+var_test_age <- var.test(df$age, sample_data$age)
+
+# Calcular el intervalo de confianza del 95% para el cociente de varianzas
+ci_ratio_variances_age <- var_test_age$conf.int
+
+# Imprimir resultados para Age
+cat("Diferencia de Medias Poblacionales (Age):\n", ci_diff_means_age, "\n\n")
+cat("Cociente de Varianzas Poblacionales (Age):\n", ci_ratio_variances_age, "\n\n")
+
+# Realizar una prueba t para la diferencia de medias (Blood Glucose Level)
+t_test_glucosa <- t.test(df$blood_glucose_level, sample_data$blood_glucose_level)
+
+# Calcular el intervalo de confianza del 95% para la diferencia de medias
+ci_diff_means_glucosa <- t_test_glucosa$conf.int
+
+# Realizar una prueba F para el cociente de varianzas (Blood Glucose Level)
+var_test_glucosa <- var.test(df$blood_glucose_level, sample_data$blood_glucose_level)
+
+# Calcular el intervalo de confianza del 95% para el cociente de varianzas
+ci_ratio_variances_glucosa <- var_test_glucosa$conf.int
+
+# Imprimir resultados para Blood Glucose Level
+cat("Diferencia de Medias Poblacionales (Blood Glucose Level):\n", ci_diff_means_glucosa, "\n\n")
+cat("Cociente de Varianzas Poblacionales (Blood Glucose Level):\n", ci_ratio_variances_glucosa, "\n\n")
+
+# Realizar una prueba t para la diferencia de medias (BMI)
+t_test_bmi <- t.test(df$bmi, sample_data$bmi)
+
+# Calcular el intervalo de confianza del 95% para la diferencia de medias
+ci_diff_means_bmi <- t_test_bmi$conf.int
+
+# Realizar una prueba F para el cociente de varianzas (BMI)
+var_test_bmi <- var.test(df$bmi, sample_data$bmi)
+
+# Calcular el intervalo de confianza del 95% para el cociente de varianzas
+ci_ratio_variances_bmi <- var_test_bmi$conf.int
+
+# Imprimir resultados para BMI
+cat("Diferencia de Medias Poblacionales (BMI):\n", ci_diff_means_bmi, "\n\n")
+cat("Cociente de Varianzas Poblacionales (BMI):\n", ci_ratio_variances_bmi, "\n\n")
+
+# Realizar una prueba t para la diferencia de medias (HbA1c Level)
+t_test_HbA1c <- t.test(df$HbA1c_level, sample_data$HbA1c_level)
+
+# Calcular el intervalo de confianza del 95% para la diferencia de medias
+ci_diff_means_HbA1c <- t_test_HbA1c$conf.int
+
+# Realizar una prueba F para el cociente de varianzas (HbA1c Level)
+var_test_HbA1c <- var.test(df$HbA1c_level, sample_data$HbA1c_level)
+
+# Calcular el intervalo de confianza del 95% para el cociente de varianzas
+ci_ratio_variances_HbA1c <- var_test_HbA1c$conf.int
+
+# Imprimir resultados para HbA1c Level
+cat("Diferencia de Medias Poblacionales (HbA1c Level):\n", ci_diff_means_HbA1c, "\n\n")
+cat("Cociente de Varianzas Poblacionales (HbA1c Level):\n", ci_ratio_variances_HbA1c, "\n\n")
+
+```
+
+Los resultados de las pruebas estadísticas indican que no se encontraron diferencias estadísticamente significativas entre el conjunto completo de datos y las muestras aleatorias de 500 filas en términos de medias poblacionales y cocientes de varianzas. En todos los casos, los intervalos de confianza para la diferencia de medias incluyen el valor 0, y los intervalos de confianza para el cociente de varianzas incluyen el valor 1.
+
+Por lo tanto, no se dispone de evidencia suficiente para afirmar que existen discrepancias sustanciales en las características centrales (medias) ni en la variabilidad (varianzas) entre el conjunto de datos completo y las muestras aleatorias analizadas. Estos resultados sugieren que la muestra aleatoria de 500 filas parece ser representativa del conjunto completo en lo que respecta a estas medidas estadísticas específicas.
+
+<span style="color:blue; font-size:2em;">
+Realizar los siguientes contrastes de hipótesis con un nivel de significación del 5%:
+a) Tests no paramétricos: todos los relacionados con una sola muestra y dos 
+muestras
+b) Tests paramétricos: todos los relacionados con una sola muestra y dos muestras
+</span>
+
+Las pruebas paramétricas asumen que los datos provienen de una población con una distribución específica (generalmente una distribución normal) y que tienen ciertas propiedades estadísticas conocidas, como la media y la varianza.
+
+Las pruebas no paramétricas son menos restrictivas y no asumen una distribución específica para los datos. Se utilizan cuando los datos no cumplen con los supuestos de normalidad o cuando se trabaja con variables ordinales o nominales.
+
+# Tests no parametricos con una sola muestra
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+ks.test(edad, "pnorm", mean(edad), sd(edad))
+ks.test(glucosa, "pnorm", mean(glucosa), sd(glucosa))
+ks.test(bmi, "pnorm", mean(bmi), sd(bmi))
+ks.test(HbA1c, "pnorm", mean(HbA1c), sd(HbA1c))
+
+# Test de Shapiro para una muestra
+shapiro.test(edad)
+shapiro.test(glucosa)
+shapiro.test(bmi)
+shapiro.test(HbA1c)
+``` 
+El Test de Kolmogorov-Smirnov (KS) es una prueba estadística utilizada para evaluar si una muestra sigue una distribución de probabilidad específica. En otras palabras, el test de Kolmogorov-Smirnov se utiliza para determinar si una muestra proviene de una población con una distribución de probabilidad específica (por ejemplo, normal, uniforme, exponencial, etc.). La hipótesis nula (H0) del test de Kolmogorov-Smirnov establece que la muestra sigue la distribución especificada. La hipótesis alternativa (H1) sugiere que la muestra no sigue esa distribución. Dependiendo de la variante del test (unilateral o bilateral) y del contexto, las hipótesis se pueden formular de diferentes maneras.
+
+El Test de Shapiro-Wilk es una prueba estadística utilizada para evaluar si una muestra proviene de una población con una distribución normal. Es especialmente útil cuando se trabaja con muestras de tamaño moderado a pequeño (generalmente hasta alrededor de 50-200 observaciones), ya que para muestras grandes, el test puede ser demasiado poderoso y tender a rechazar la hipótesis nula incluso para desviaciones leves de la normalidad.
+
+Según tanto el Test de Kolmogorov-Smirnov como el Test de Shapiro-Wilk, hay evidencia significativa para rechazar la hipótesis nula de normalidad en todas las variables (edad, glucosa, BMI, HbA1c).
+Estos resultados sugieren que las distribuciones de estas variables no son normales en la población de la cual se extrajo la muestra. Es importante considerar esto al aplicar métodos estadísticos que asumen normalidad.
+
+Estos resultados confirma la evidencia visual de la distribución de las variables, que se observó en la sección de Análisis Exploratorio de Datos, donde se identificaron valores atípicos, asimetrías en las distribuciones y los histogramas.
+
+
+# Tests no parametricos con dos mestras
+
+```{r}	
+# Cargar librerías
+library(dplyr)
+
+# Cargar datos
+df <- read.csv("new_columns.csv")
+
+# Seleccionar las primeras 500 filas
+df_sub <- head(df, 500)
+
+# Filtrar por género (Male)
+df_male <- df_sub %>%
+  filter(gender == "Male")
+
+# Filtrar por género (Female)
+df_female <- df_sub %>%
+  filter(gender == "Female")
+
+# Calcular la media y la varianza para la edad de hombres
+media_varianza_male <- df_male %>%
+  summarize(
+    Media = mean(age),
+    Varianza = var(age)
+  )
+
+# Calcular la media y la varianza para la edad de mujeres
+media_varianza_female <- df_female %>%
+  summarize(
+    Media = mean(age),
+    Varianza = var(age)
+  )
+
+# Mostrar resultados
+print("Media y Varianza de la Edad para Hombres (primeras 500 filas):")
+print(media_varianza_male)
+
+print("\nMedia y Varianza de la Edad para Mujeres (primeras 500 filas):")
+print(media_varianza_female)
+
+var.test(df_male$age, df_female$age, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+
+wilcox.test(df_male$age, df_female$age, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+# Test de Wilcoxon para dos muestras
+wilcox.test(edad, glucosa, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+wilcox.test(edad, bmi, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+wilcox.test(edad, HbA1c, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+```
+
+El Test de Wilcoxon es una prueba estadística no paramétrica que se utiliza para comparar dos muestras relacionadas o pareadas. A menudo, se aplica cuando los datos no cumplen con los supuestos necesarios para realizar una prueba t de Student pareada, como la normalidad de las diferencias.
+
+Conclusiones Generales:
+
+En la comparación de las edades entre hombres y mujeres, el análisis estadístico no proporcionó evidencia significativa para afirmar que existe una diferencia mediana en las edades entre ambos grupos. El valor p asociado al Test de Wilcoxon fue de 0.5844, lo cual es mayor que el nivel de significancia comúnmente utilizado (0.05). Por lo tanto, no hay suficiente base para rechazar la hipótesis nula, sugiriendo que la mediana de las edades entre hombres y mujeres es estadísticamente similar.
+
+Es importante destacar que esta conclusión específica es aplicable únicamente a la comparación de las edades entre hombres y mujeres. Las otras comparaciones realizadas con las variables de niveles de glucosa, índice de masa corporal (BMI) y niveles de HbA1c mostraron evidencia significativa de diferencias medianas entre las edades en cada caso respectivo. Por lo tanto, las conclusiones varían según la variable analizada, y se recomienda considerar estas diferencias en el contexto específico de cada comparación.
+
+
+# Tests paramétricos con una sola muestra
+
+```{r}
+# Tests paramétricos: todos los relacionados con una sola muestra y dos muestras
+# Test t para una muestra
+
+t.test(edad, mu=mean(edad), sd=sd(edad), alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+t.test(glucosa, mu=mean(glucosa), sd=sd(glucosa), alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+t.test(bmi, mu=mean(bmi), sd=sd(bmi), alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+t.test(HbA1c, mu=mean(HbA1c), sd=sd(HbA1c), alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+```
+
+Conclusiones Generales:
+
+En todas las comparaciones, el valor p asociado a la prueba t es igual a 1, indicando que no hay evidencia suficiente para rechazar la hipótesis nula de que las medias de las variables en cuestión son iguales a los valores proporcionados (46.782 para edad, 140.632 para glucosa, 28.23726 para BMI y 5.6812 para HbA1c). Además, los intervalos de confianza del 95% incluyen los valores de referencia, respaldando la falta de evidencia para diferencias significativas en las medias. En resumen, según las pruebas t, no hay diferencias significativas entre las medias de las variables y los valores de referencia dados.
+
+# Tests paramétricos con dos muestras
+
+```{r}
+# Test t para dos muestras
+
+t.test(df_male$age, df_female$age, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+t.test(edad, glucosa, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+t.test(edad, bmi, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+t.test(edad, HbA1c, alternative = "two.sided", conf.int = TRUE, conf.level = 0.95)
+```
+
+Conclusiones Generales:
+
+En la comparación de edades entre hombres y mujeres, no se encontraron diferencias significativas.
+Sin embargo, en las comparaciones entre edad y niveles de glucosa, índice de masa corporal (BMI) y niveles de HbA1c, se encontraron diferencias significativas en las medias. Las edades y las otras variables muestran diferencias estadísticamente significativas entre los grupos analizados.
+Los intervalos de confianza proporcionan información sobre la magnitud de estas diferencias. En resumen, las edades parecen no diferir entre hombres y mujeres, pero hay diferencias significativas en las otras variables analizadas.
+
+<span style="color:blue; font-size:2em;">
+Interpretación de los resultados procedentes de los contrastes de hipótesis y comparación de los resultados obtenidos en la estimación por intervalos de confianza
+</span> 
+
+<u>Contrastes de Hipótesis:</u>
+
+Valor p:
+
+Interpretación: Un valor p pequeño (generalmente < 0.05) sugiere evidencia suficiente para rechazar la hipótesis nula.
+
+Comparación: Si el valor p es menor que el nivel de significancia (por ejemplo, 0.05), se rechaza la hipótesis nula.
+
+<u>Intervalo de Confianza:</u>
+
+Interpretación: Proporciona un rango plausible de valores para el parámetro de interés.
+
+Comparación: Si el intervalo de confianza no incluye el valor bajo la hipótesis nula, esto respalda el rechazo de la hipótesis nula.
+
+Longitud del Intervalo:
+
+Interpretación: Una longitud más corta del intervalo indica mayor precisión en la estimación del parámetro.
+
+Comparación: Se prefiere un intervalo más corto, ya que proporciona una estimación más precisa.
+
+<u>Comparación entre Hipótesis y Intervalos de Confianza:</u>
+
+Coincidencia de Resultados:
+
+Si el valor p es pequeño (menor que el nivel de significancia) y el intervalo de confianza no incluye el valor bajo la hipótesis nula, ambos respaldan el rechazo de la hipótesis nula.
+
+Diferencias en Resultados:
+
+Si el valor p es pequeño, pero el intervalo de confianza incluye el valor bajo la hipótesis nula, podría haber conflictos entre la interpretación del valor p y el intervalo de confianza. En este caso, se presta más atención a la magnitud y la dirección del efecto.
+Valor p Elevado con Intervalo que no Incluye el Valor Bajo la Hipótesis Nula:
+
+Aunque el valor p puede no ser significativo, si el intervalo de confianza no incluye el valor bajo la hipótesis nula, aún puede haber evidencia sustantiva para considerar.
+En general, la interpretación de resultados debe ser considerada en conjunto, considerando tanto el valor p como el intervalo de confianza, y prestando atención a la magnitud y relevancia práctica de los hallazgos. Además, es fundamental entender el contexto específico del problema o investigación para realizar interpretaciones informadas.
+
+<u>Interpretacion de ejemplo para los Tests paramétricos con dos muestras:</u>
+
+edad de mujeres y edad de hombres: (PRIMERO)
+
+Estadístico t: -0.52949
+p-value: 0.5968
+Intervalo de Confianza (95%): [-4.643002, 2.672944]
+
+No hay evidencia significativa para afirmar que hay una diferencia en las edades promedio entre hombres y mujeres. El p-value elevado y el intervalo de confianza que incluye cero respaldan esta conclusión. En otras palabras, no hay suficiente evidencia para sugerir que la diferencia en las edades medias es diferente de cero, y es posible que cualquier diferencia observada sea debida al azar.
+
+edad y HbA1c: (ULTIMO)
+
+Estadístico t: 46.34
+p-value: < 2.2e-16
+Intervalo de Confianza (95%): [39.35822, 42.84338]
+
+Hay evidencia significativa para afirmar que hay una diferencia en las medias entre las edades y los niveles de HbA1c. El p-value extremadamente pequeño y el intervalo de confianza que no incluye cero respaldan esta conclusión. En otras palabras, la diferencia observada entre las edades y los niveles de HbA1c no es probable que sea debida al azar.
+
+<span style="color:blue; font-size:2em;">
+Seleccionar tres m.a.s y aplicar los contrastes de Kruskal-Wallis, Levene y ANOVA. 
+Analizar los resultados.
+</span> 
+
+```{r}
+# Cargar datos
+df <- read.csv("new_columns.csv")
+# Seleccionar columnas de interés
+edad <- df$age
+glucosa <- df$blood_glucose_level
+bmi <- df$bmi
+HbA1c <- df$HbA1c_level
+
+# Seleccionar tres muestras aleatorias
+set.seed(123)  # Para reproducibilidad
+sample1 <- data.frame(valor = sample(edad, 100), Variable = rep("Edad", 100))
+sample2 <- data.frame(valor = sample(glucosa, 100), Variable = rep("Glucosa", 100))
+sample3 <- data.frame(valor = sample(bmi, 100), Variable = rep("BMI", 100))
+
+# Concatenar las muestras en un único dataframe
+combined_samples <- rbind(sample1, sample2, sample3)
+
+# Realizar el contraste de Kruskal-Wallis
+kruskal_test_result <- kruskal.test(valor ~ Variable, data = combined_samples)
+
+# Realizar el contraste de Levene
+levene_test_result <- car::leveneTest(valor ~ Variable, data = combined_samples)
+
+# Realizar el contraste de ANOVA
+anova_result <- aov(valor ~ Variable, data = combined_samples)
+
+# Imprimir resultados
+cat("Contraste de Kruskal-Wallis:\n") 
+print(kruskal_test_result)
+
+cat("\nContraste de Levene:\n")
+print(levene_test_result)
+
+cat("\nContraste de ANOVA:\n")
+print(anova_result)
+
+```
+
+Contraste de Kruskal-Wallis:
+El contraste de Kruskal-Wallis es una prueba no paramétrica utilizada para determinar si hay diferencias significativas entre las medianas de tres o más grupos. Aquí están los resultados:
+
+Estadístico de Chi-cuadrado de Kruskal-Wallis: 216.55
+Grados de libertad: 2 (número de grupos menos 1)
+Valor p: < 2.2e-16 (muy cercano a cero)
+Interpretación: El valor p es extremadamente pequeño, lo que sugiere que hay evidencia suficiente para rechazar la hipótesis nula de que las medianas de los grupos son iguales. En otras palabras, hay diferencias significativas entre las distribuciones de las variables edad, glucosa y bmi.
+
+Contraste de Levene:
+El contraste de Levene es una prueba para evaluar la homogeneidad de varianzas entre grupos. Aquí están los resultados:
+
+Estadístico F de Levene: 39.004
+Grados de libertad: 2 (número de grupos menos 1)
+Valor p: 9.104e-16 (muy cercano a cero)
+Interpretación: El valor p es muy pequeño, lo que sugiere que hay evidencia suficiente para rechazar la hipótesis nula de que las varianzas son iguales entre los grupos. Esto respalda la conclusión del contraste de Kruskal-Wallis.
+
+Contraste de ANOVA:
+El ANOVA (Análisis de Varianza) es una prueba paramétrica que también evalúa si hay diferencias significativas entre las medias de tres o más grupos. Aquí están los resultados:
+
+Suma de cuadrados entre grupos: 744189.8
+Suma de cuadrados dentro de grupos (residuals): 243553.0
+Grados de libertad entre grupos: 2
+Grados de libertad dentro de grupos (residuals): 297
+Error estándar residual: 28.6364
+Interpretación: El valor p no se proporciona directamente, pero al igual que en los contrastes anteriores, se utiliza para evaluar si hay diferencias significativas. Dado que el contraste de Levene ya indicó diferencias significativas en las varianzas, el ANOVA también puede interpretarse como que hay diferencias significativas en las medias de los grupos.
+
+En resumen, todas las pruebas indican que hay diferencias significativas entre las distribuciones de las variables edad, glucosa y bmi.
+
+<span style="color:blue; font-size:2em;">Programar funciones para automatizar el proceso</span> 
+
+```{r}	
+# Función para realizar una prueba t para la diferencia de medias
+t_test_diff_means <- function(var1, var2, alpha = 0.05) {
+  t_result <- t.test(var1, var2)
+  ci <- t_result$conf.int
+  cat("Diferencia de Medias Poblacionales:\n", ci, "\n\n")
+  return(ci)
+}
+
+# Función para realizar una prueba F para el cociente de varianzas
+var_test_ratio_variances <- function(var1, var2, alpha = 0.05) {
+  var_result <- var.test(var1, var2)
+  ci <- var_result$conf.int
+  cat("Cociente de Varianzas Poblacionales:\n", ci, "\n\n")
+  return(ci)
+}
+
+# Ejemplo de uso con variables específicas (por ejemplo, 'age')
+set.seed(123)  # Para reproducibilidad
+sample_data <- df[sample(nrow(df), 500), ]
+
+# Prueba t para la diferencia de medias (Age)
+ci_diff_means_age <- t_test_diff_means(df$age, sample_data$age)
+
+# Prueba F para el cociente de varianzas (Age)
+ci_ratio_variances_age <- var_test_ratio_variances(df$age, sample_data$age)
+```
+
+# Funcion para la diferencia de medias
+
+```{r}	
+diff_mean <- function(group1, group2) {
+ mean1 <- mean(group1)
+ mean2 <- mean(group2)
+  
+ difference <- mean1 - mean2
+  
+ return(difference)
+}
+
+# Ejemplo de uso
+set.seed(123)
+group1 <- rnorm(100)
+group2 <- rnorm(100)
+
+diff_result <- diff_mean(group1, group2)
+print(paste("La diferencia de medias es:", diff_result))
+```
+
+# Funcion para la diferencia de varianzas
+
+```{r}
+diff_var <- function(group1, group2) {
+ var1 <- var(group1)
+ var2 <- var(group2)
+  
+ difference <- var1 - var2
+  
+ return(difference)
+}
+
+# Ejemplo de uso
+set.seed(123)
+group1 <- rnorm(100)
+group2 <- rnorm(100)
+
+diff_result <- diff_var(group1, group2)
+print(paste("La diferencia de varianzas es:", diff_result))
+```
+
+# Funcion para la diferencia de medias y varianzas
+
+```{r}
+diff_mean_var <- function(group1, group2) {
+ mean1 <- mean(group1)
+ mean2 <- mean(group2)
+ var1 <- var(group1)
+ var2 <- var(group2)
+  
+ difference <- mean1 - mean2
+ difference_var <- var1 - var2
+  
+ return(c(difference, difference_var))
+}
+
+# Ejemplo de uso
+set.seed(123)
+group1 <- rnorm(100)
+group2 <- rnorm(100)
+
+diff_result <- diff_mean_var(group1, group2)
+print(paste("La diferencia de medias es:", diff_result[1]))
+print(paste("La diferencia de varianzas es:", diff_result[2]))
+```
+
+# Funcion para la diferencia de medias y varianzas con intervalos de confianza
+
+```{r}
+diff_mean_var_ci <- function(group1, group2, alpha = 0.05) {
+  mean1 <- mean(group1)
+  mean2 <- mean(group2)
+  var1 <- var(group1)
+  var2 <- var(group2)
+  
+  difference <- mean1 - mean2
+  difference_var <- abs(var1 - var2)  # Tomar el valor absoluto de la diferencia de varianzas
+  
+  n1 <- length(group1)
+  n2 <- length(group2)
+  
+  k1 <- qchisq(1 - alpha/2, n1 - 1, lower.tail = FALSE)
+  k2 <- qchisq(alpha/2, n1 - 1, lower.tail = FALSE)
+  
+  k3 <- qchisq(1 - alpha/2, n2 - 1, lower.tail = FALSE)
+  k4 <- qchisq(alpha/2, n2 - 1, lower.tail = FALSE)
+  
+  ci_diff <- c(difference - sqrt(k1/n1 + k4/n2) * sqrt(difference_var), difference + sqrt(k2/n1 + k3/n2) * sqrt(difference_var))
+  ci_diff_var <- c(difference_var * k1/k3, difference_var * k2/k4)
+  
+  return(list(ci_diff, ci_diff_var))
+}
+
+# Ejemplo de uso
+set.seed(123)
+group1 <- rnorm(100)
+group2 <- rnorm(100)
+
+diff_result <- diff_mean_var_ci(group1, group2)
+print(paste("El intervalo de confianza para la diferencia de medias es:", diff_result[[1]]))
+print(paste("El intervalo de confianza para la diferencia de varianzas es:", diff_result[[2]]))
+```
+
+# Funcion para t test
+
+```{r}
+perform_t_test <- function(data, mu = NULL, alternative = "two.sided", conf.level = 0.95) {
+  # Verificar si se proporcionó un valor para 'mu'; si no, usar la media de los datos
+  if (is.null(mu)) {
+    mu <- mean(data)
+  }
+  
+  # Realizar el t-test
+  result <- t.test(data, mu = mu, alternative = alternative, conf.level = conf.level)
+  
+  # Mostrar los resultados
+  cat("Resultados del t-test:\n")
+  cat("Estadístico t:", result$statistic, "\n")
+  cat("Valor p:", result$p.value, "\n")
+  cat("Intervalo de confianza del", conf.level * 100, "% para la media:", result$conf.int, "\n")
+  
+  # Devolver los resultados como un objeto
+  return(result)
+}
+
+# Ejemplo de uso
+# Supongamos que tienes un vector de datos llamado 'edad'
+edad <- c(30, 35, 40, 45, 50, 55, 60, 65, 70)
+resultado_edad <- perform_t_test(edad, alternative = "two.sided")
+```
+
+# Funcion para shapiro test
+
+```{r}	
+perform_shapiro_test <- function(data) {
+  # Realizar el test de Shapiro-Wilk
+  result <- shapiro.test(data)
+  
+  # Mostrar los resultados
+  cat("Resultados del test de Shapiro-Wilk:\n")
+  cat("Estadístico W:", result$statistic, "\n")
+  cat("Valor p:", result$p.value, "\n")
+  
+  # Interpretar el resultado
+  if (result$p.value < 0.05) {
+    cat("Conclusión: Se rechaza la hipótesis nula de normalidad.\n")
+  } else {
+    cat("Conclusión: No hay suficiente evidencia para rechazar la hipótesis nula de normalidad.\n")
+  }
+  
+  # Devolver los resultados como un objeto
+  return(result)
+}
+
+# Ejemplo de uso
+# Supongamos que tienes un vector de datos llamado 'edad'
+edad <- c(30, 35, 40, 45, 50, 55, 60, 65, 70)
+resultado_shapiro_edad <- perform_shapiro_test(edad)
+```
+
+# Funcion para Kolmogorov-Smirnov test
+
+```{r}	
+perform_ks_test <- function(data, distribution = "pnorm", mu = mean(data), sigma = sd(data)) {
+  # Realizar el test de Kolmogorov-Smirnov
+  result <- ks.test(data, distribution, mean = mu, sd = sigma)
+  
+  # Mostrar los resultados
+  cat("Resultados del test de Kolmogorov-Smirnov:\n")
+  cat("Estadístico D:", result$statistic, "\n")
+  cat("Valor p:", result$p.value, "\n")
+  
+  # Interpretar el resultado
+  if (result$p.value < 0.05) {
+    cat("Conclusión: Se rechaza la hipótesis nula de que los datos siguen la distribución especificada.\n")
+  } else {
+    cat("Conclusión: No hay suficiente evidencia para rechazar la hipótesis nula de que los datos siguen la distribución especificada.\n")
+  }
+  
+  # Devolver los resultados como un objeto
+  return(result)
+}
+
+# Ejemplo de uso
+# Supongamos que tienes un vector de datos llamado 'edad'
+edad <- c(30, 35, 40, 45, 50, 55, 60, 65, 70)
+resultado_ks_edad <- perform_ks_test(edad, distribution = "pnorm", mu = mean(edad), sigma = sd(edad))
+```
