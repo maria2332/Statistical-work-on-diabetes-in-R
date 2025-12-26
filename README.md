@@ -21,8 +21,6 @@
 
 👉 https://maria2332.github.io/Statistical-work-on-diabetes-in-R/
 
----
-
 ## 📚 Project Documentation (External)
 
 An automatically generated documentation view of this repository is available via DeepWiki:
