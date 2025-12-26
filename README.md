@@ -93,9 +93,11 @@ This approach allows:
 ├── trabajo.Rmd        # Main analysis (code + narrative)
 ├── trabajo.html       # Rendered statistical report
 └── README.md
+```
 
---- 
-📌 Key Learnings
+---
+
+## 📌 Key Learnings
 
 Importance of data cleaning prior to analysis
 
@@ -105,7 +107,7 @@ How R Markdown supports reproducible research
 
 Interpretation matters more than numerical output alone
 
-🔍 Final Remarks
+## 🔍 Final Remarks
 
 This project reflects an academic approach to statistical analysis in R, combining
 methodology, interpretation, and reproducibility.
